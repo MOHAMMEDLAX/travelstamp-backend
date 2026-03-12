@@ -3,10 +3,7 @@
 return [
     'paths' => ['api/*'],
     'allowed_methods' => ['*'],
-    'allowed_origins' => [
-    'https://travelstamp-app.vercel.app',
-    'https://travelstamp-bojy.vercel.app',
-],
+ 'allowed_origins' => ['*'],
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['*'],
     'exposed_headers' => [],
