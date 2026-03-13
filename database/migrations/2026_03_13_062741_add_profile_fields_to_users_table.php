@@ -6,10 +6,12 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up(): void
+    /**
+     * Run the migrations.
+     */
+   public function up(): void
 {
     Schema::table('users', function (Blueprint $table) {
-        $table->string('avatar')->nullable()->after('email');
         $table->string('avatar_url')->nullable()->after('avatar');
         $table->string('current_country_code', 10)->nullable()->after('avatar_url');
         $table->string('current_city')->nullable()->after('current_country_code');
@@ -19,7 +21,7 @@ return new class extends Migration
 public function down(): void
 {
     Schema::table('users', function (Blueprint $table) {
-        $table->dropColumn(['avatar', 'avatar_url', 'current_country_code', 'current_city']);
+        $table->dropColumn(['avatar_url', 'current_country_code', 'current_city']);
     });
 }
 };

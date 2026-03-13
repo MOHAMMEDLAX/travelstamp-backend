@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 
 class AuthController extends Controller
 {
@@ -56,24 +57,61 @@ class AuthController extends Controller
             'user'    => $user,
         ]);
     }
- public function update(Request $request)
-{
-    $request->validate([
-        'name'   => 'required|string|max:255',
-        'avatar' => 'nullable|image|max:5120',
-    ]);
 
-    $updateData = ['name' => $request->name];
+    // ✅ تحديث بيانات المستخدم (الاسم + الدولة الحالية)
+    public function update(Request $request)
+    {
+        $request->validate([
+            'name'                 => 'sometimes|string|max:255',
+            'current_country_code' => 'nullable|string|max:10',
+            'current_city'         => 'nullable|string|max:255',
+        ]);
 
-    if ($request->hasFile('avatar')) {
-        $path = $request->file('avatar')->store('avatars', 'public');
-        $updateData['avatar'] = $path;
+        $updateData = [];
+
+        if ($request->has('name')) {
+            $updateData['name'] = $request->name;
+        }
+        if ($request->has('current_country_code')) {
+            $updateData['current_country_code'] = $request->current_country_code;
+        }
+        if ($request->has('current_city')) {
+            $updateData['current_city'] = $request->current_city;
+        }
+
+        $request->user()->update($updateData);
+
+        return response()->json($request->user()->fresh());
     }
 
-    $request->user()->update($updateData);
+    // ✅ رفع صورة الأفاتار
+    public function updateAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required|image|max:5120', // 5MB max
+        ]);
 
-    return response()->json($request->user()->fresh());
-}
+        $user = $request->user();
+
+        // حذف الصورة القديمة إن وجدت
+        if ($user->avatar_url) {
+            $oldPath = str_replace(url('/storage') . '/', '', $user->avatar_url);
+            if (Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
+        }
+
+        // حفظ الصورة الجديدة
+        $path = $request->file('avatar')->store('avatars', 'public');
+        $avatarUrl = url('/storage/' . $path);
+
+        $user->update(['avatar_url' => $avatarUrl]);
+
+        return response()->json([
+            'message'    => 'تم تحديث الصورة بنجاح',
+            'avatar_url' => $avatarUrl,
+        ]);
+    }
 
     // ✅ تسجيل الخروج
     public function logout(Request $request)
